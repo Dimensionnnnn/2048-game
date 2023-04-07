@@ -8,8 +8,66 @@ grid.getRandomEmptyCell().linkTile(new Tile(gameBoard));
 grid.getRandomEmptyCell().linkTile(new Tile(gameBoard));
 setupInputOnce();
 
+let touchStartX = 0;
+let touchStartY = 0;
+
 function setupInputOnce() {
     window.addEventListener('keydown', handleInput, {once: true});
+
+    document.addEventListener('touchstart', (event) => {
+        touchStartX = event.changedTouches[0].clientX;
+        touchStartY = event.changedTouches[0].clientY;
+    }, {once: true});
+
+    document.addEventListener('touchend', handleSwipe);
+}
+
+async function handleSwipe(event) {
+    let touchEndX = event.changedTouches[0].clientX;
+    let touchEndY = event.changedTouches[0].clientY;
+    let diffX = touchEndX - touchStartX;
+    let diffY = touchEndY - touchStartY;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 0) {
+            if (!canMoveRight()) {
+                setupInputOnce();
+                return;
+            }
+            await moveRight();
+        } else {
+            if (!canMoveLeft()) {
+                setupInputOnce();
+                return;
+            }
+            await moveLeft();
+        }
+    } else {
+        if (diffY > 0) {
+            if (!canMoveDown()) {
+                setupInputOnce();
+                return;
+            }
+            await moveDown();
+        } else {
+            if (!canMoveUp()) {
+                setupInputOnce();
+                return;
+            }
+            await moveUp();
+        }
+    }
+
+    const newTile = new Tile(gameBoard);
+    grid.getRandomEmptyCell().linkTile(newTile);
+
+    if (!canMoveUp() && !canMoveDown() && !canMoveLeft() && !canMoveRight()) {
+        await newTile.waitForAnimationEnd();
+        alert('Try again!');
+        return;
+    }
+
+    setupInputOnce();
 }
 
 async function handleInput(event) {
